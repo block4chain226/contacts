@@ -4,20 +4,19 @@ const {
     createContact,
     getContactById,
     updateContactById,
-    deleteContactById,
-    logger
+    deleteContactById
 } = require('../controllers/contacts.js')
 
 const router = express.Router()
 
-router.use((req, res, next) => {
-    console.log('invoked at ', Date.now().toLocaleString())
-    next()
-})
+// router.use((req, res, next) => {
+//     console.log('invoked at ', Date.now().toLocaleString())
+//     next()
+// })
 
-router.route('/').get(logger, getContacts)
+router.route('/').get(getContacts)
 
-router.route('/').post(logger, createContact)
+router.route('/').post(createContact)
 
 router.route('/:id').get(getContactById)
 

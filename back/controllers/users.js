@@ -1,5 +1,7 @@
 const Users = require('../models/usersModel.js')
 const asyncHandler = require('express-async-handler')
+const bcrypt = require('bcrypt')
+const jwt = require('jsonwebtoken')
 
 const getUsers = asyncHandler(async (req, res) => {
     const users = await Users.find()
@@ -25,12 +27,17 @@ const loginUser = asyncHandler(async (req, res) => {
         res.status(400)
         throw new Error('you should enter login and password')
     }
-    const user = await Users.findOne({login: login, pass: pass})
-    if (!user) {
-        res.status(400)
-        throw new Error(`invalid credentials`)
+    const user = await Users.findOne({login: login})
+    if (user || await bcrypt.compare(user.pass, pass)) {
+        const token = await jwt.sign({
+            username: user.name,
+            login: user.login
+        }, process.env.TOKEN_SECRET, {expiresIn: '2m'})
+        res.status(200).json({message: `${user.login} logged in`, token: token})
+    } else {
+        res.status(401)
+        throw new Error('invalid credentials')
     }
-    res.status(200).json({message: `${user.login} logged in`, username: user.name, login: user.login})
 })
 
 const registerUser = asyncHandler(async (req, res) => {
@@ -39,14 +46,22 @@ const registerUser = asyncHandler(async (req, res) => {
         res.status(400)
         throw new Error('you didnt enter all needed data')
     }
-    const loginExists = await Users.findByLogin(login)
-    if (loginExists.length) {
+    const loginExists = await Users.findOne({login})
+    if (loginExists) {
         res.status(400)
         throw new Error(`user with login ${login} already exists`)
     }
-    const newUser = new Users({name, login, email, pass})
+    const passwordHash = await bcrypt.hash(pass, 10)
+    const newUser = new Users({name, login, email, pass: passwordHash})
     newUser.save()
-    res.status(201).json({message: 'user was created successfully', newUser})
+    console.log("=>(users.js:50) newUser", newUser);
+    if (newUser) {
+        res.status(201).json({message: 'user was created successfully', id: newUser.id})
+    } else {
+        res.status(400)
+        throw new Error('user was not created')
+    }
+
 })
 
 const deleteUserById = asyncHandler(async (req, res) => {

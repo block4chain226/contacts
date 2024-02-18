@@ -2,21 +2,9 @@ const mongoose = require('mongoose')
 
 const usersModel = mongoose.Schema({
     name: {type: String, required: true},
-    login: {type: String, required: true},
-    email: {type: String, required: true},
+    login: {type: String, required: true, unique: [true, 'email already taken']},
+    email: {type: String, required: true, unique: [true, 'email already taken']},
     pass: {type: String, required: true}
-}, {timestamp: true})
-
-usersModel.query.byLogin = (login) => {
-    return this.where({login: login})
-}
-
-usersModel.statics.findByLogin = function (login) {
-    return this.find({login: login})
-}
-
-usersModel.statics.findByPassword = function (password) {
-    return this.find({pass: password})
-}
+}, {timestamps: true})
 
 module.exports = mongoose.model('Users', usersModel)
